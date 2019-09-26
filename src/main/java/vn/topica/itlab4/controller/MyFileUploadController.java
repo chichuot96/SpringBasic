@@ -3,6 +3,7 @@ package vn.topica.itlab4.controller;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -23,7 +24,8 @@ import vn.topica.itlab4.processDb.ProcessDb;
 public class MyFileUploadController {
 	 private ApplicationContext context = new ClassPathXmlApplicationContext("Spring-bean.xml");
      private ProcessDb studentJDBCTemplate =(ProcessDb)context.getBean("insert");
-
+     private List<Student> list;
+     private List<String> listId;
 
 	// GET: Hiển thị trang form upload
 	@RequestMapping(value = "/upload", method = RequestMethod.GET)
@@ -31,7 +33,9 @@ public class MyFileUploadController {
 
 		MyUploadForm myUploadForm = new MyUploadForm();
 		model.addAttribute("myUploadForm", myUploadForm);
-//		studentJDBCTemplate.select();
+		list=studentJDBCTemplate.findAll();
+		 listId=list.stream().map(s->s.getId()).collect(Collectors.toList());
+		model.addAttribute("list", list);
 		return "upload";
 	}
 
@@ -52,20 +56,7 @@ public class MyFileUploadController {
 		String description = myUploadForm.getDescription();
 		System.out.println("Description: " + description);
 
-		// Thư mục gốc upload file.
-		String uploadRootPath = request.getServletContext().getRealPath("upload");
-		System.out.println("uploadRootPath=" + uploadRootPath);
-
-		File uploadRootDir = new File(uploadRootPath);
-		//
-		// Tạo thư mục gốc upload nếu nó không tồn tại.
-		if (!uploadRootDir.exists()) {
-			uploadRootDir.mkdirs();
-		}
-		
 		MultipartFile[] fileDatas = myUploadForm.getFileDatas();
-		//
-		List<File> uploadedFiles = new ArrayList<File>();
 		for (MultipartFile fileData : fileDatas) {
 			InputStream is;
 			try {
@@ -76,10 +67,9 @@ public class MyFileUploadController {
 				e.printStackTrace();
 			}
 		}
-
+		
 		model.addAttribute("description", description);
-		model.addAttribute("uploadedFiles", uploadedFiles);
-		return "uploadResult";
+		return "redirect:/upload";
 	}
 
 	private void csvToStudent(Reader reader) {
@@ -88,10 +78,14 @@ public class MyFileUploadController {
 		String line;
 		try {
 			while((line=br.readLine())!=null) {
-				System.out.println(line);
 				String[] temp=line.split(",");
+				System.out.println(temp[2]);
 				Student st=new Student(temp[0],temp[1],temp[2],temp[3]);
-				System.out.println(st.toString());
+				for(String id: listId) {
+					if(st.getId().equals(id)) {
+						studentJDBCTemplate.remove(id);
+					}
+				}
 				studentJDBCTemplate.insert(st);
 			}
 		} catch (IOException e) {

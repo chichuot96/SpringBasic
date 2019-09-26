@@ -16,17 +16,23 @@ public class ProcessDb {
 	 public void setDataSource(DataSource dataSource) {
 	      this.dataSource = dataSource;
 	      this.jdbcTemplateObject = new JdbcTemplate(dataSource);
+	      
 	   }
 	public void insert(Student st) {
 		String sql = "INSERT INTO STUDENT (ID,NAME,BIRTHOFDATE,GENDER) VALUE (?,?,?,?)";
 		jdbcTemplateObject.update(sql, st.getId(), st.getName(), st.getDateOfBirth(), st.getGender());
-		System.out.println(st.getId());
 	}
-//	public void select() {
-//		String sql="SELECT * FROM STUDENT";
-//		List<Student> customers = jdbcTemplateObject.query(sql,new BeanPropertyRowMapper(Student.class));
-//		for(Student s: customers) {
-//			System.out.println(s.toString());
-//		}
-//	}
+	
+	public List<Student> findAll() {
+		
+        String sql = "SELECT * FROM STUDENT";
+
+        List<Student> listSt = jdbcTemplateObject.query(sql,new StudentRowMapper());
+        return listSt;
+		
+    }
+	public void remove(String id) {
+		String sql="DELETE FROM STUDENT WHERE ID="+id;
+		jdbcTemplateObject.update(sql);
+	}
 }
